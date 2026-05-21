@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gym Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Gym Tracker</h1>
+    <nav>
+      <button id="nav-home">Home</button>
+      <button id="nav-register">Register</button>
+      <button id="nav-login">Login</button>
+      <button id="nav-book">Book Session</button>
+      <button id="nav-view">View Sessions</button>
+      <button id="nav-workout">Create Workout</button>
+      <button id="nav-logout" style="display:none">Logout</button>
+    </nav>
+  </header>
+
+  <main id="app">
+    <section id="home" class="page">
+      <h2>Welcome</h2>
+      <p>Use the menu to register, login, book sessions and create workouts.</p>
+    </section>
+
+    <section id="register" class="page" style="display:none">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input name="fullName" placeholder="Full name" required>
+        <input name="username" placeholder="Username" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <select name="gender" required>
+          <option value="">Select gender</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Other</option>
+        </select>
+        <input name="dob" placeholder="DOB (yyyy-MM-dd)" required>
+        <button type="submit">Register</button>
+      </form>
+      <pre id="registerResult"></pre>
+    </section>
+
+    <section id="login" class="page" style="display:none">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <pre id="loginResult"></pre>
+    </section>
+
+    <section id="book" class="page" style="display:none">
+      <h2>Book Session</h2>
+      <form id="bookForm">
+        <label>Start time (local):
+          <input name="startTime" type="datetime-local" required>
+        </label>
+        <button type="submit">Book</button>
+      </form>
+      <pre id="bookResult"></pre>
+    </section>
+
+    <section id="view" class="page" style="display:none">
+      <h2>Your Sessions</h2>
+      <button id="refreshSessions">Refresh</button>
+      <pre id="viewResult"></pre>
+    </section>
+
+    <section id="workout" class="page" style="display:none">
+      <h2>Create Workout</h2>
+      <form id="workoutForm">
+        <input name="exerciseName" placeholder="Exercise name" required>
+        <input name="targetReps" type="number" placeholder="Target reps" required>
+        <input name="sets" type="number" placeholder="Sets" required>
+        <input name="workoutDate" type="date" required>
+        <button type="submit">Create</button>
+      </form>
+      <pre id="workoutResult"></pre>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
