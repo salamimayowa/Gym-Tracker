@@ -474,6 +474,42 @@ public class UserServiceImpl implements UserService {
         return new WorkoutResponse("00" , "Workout created Successfully");
     }
 
+    @Override
+    public UtilizeResponse utilizeSessionWithToken(String token) {
+        String email  = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Token-based checkin for user: {}", email);
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return new UtilizeResponse("03", "User not found.");
+        }
+
+        String sessionId = jwtUtils.getSessionIdFromToken(token);
+        if (sessionId == null) {
+            return new UtilizeResponse("04", "Invalid or expired token.");
+        }
+
+        try {
+            Optional<Session> sessionOpt = sessionRepository.findById(UUID.fromString(sessionId));
+            if (sessionOpt.isEmpty()) {
+                return new UtilizeResponse("02", "No session found for token.");
+            }
+            Session session = sessionOpt.get();
+            User user = optionalUser.get();
+            if (!String.valueOf(user.getId()).equals(session.getUserId())) {
+                return new UtilizeResponse("05", "This token does not belong to this user.");
+            }
+            if (session.isUtilize()) {
+                return new UtilizeResponse("01", "Session already utilized.");
+            }
+            session.setUtilize(true);
+            sessionRepository.save(session);
+            return new UtilizeResponse("00", "Session utilized successfully via token.");
+        } catch (IllegalArgumentException ex) {
+            log.error("Invalid session id in token: {}", ex.getMessage());
+            return new UtilizeResponse("04", "Invalid token payload.");
+        }
+    }
+
 
 }
 

@@ -1053,11 +1053,13 @@ const Report = ({ token, toast }) => {
 const QRCode = ({ token, toast }) => {
   const [qr, setQr] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("");
 
   const generate = async () => {
     setLoading(true);
     try {
-      const r = await api("/generate-qr", "GET", null, token);
+      if (!sessionId) { toast("Session ID is required", "error"); setLoading(false); return; }
+      const r = await api(`/generate-qr?sessionId=${encodeURIComponent(sessionId)}`, "GET", null, token);
       if (r.responseCode === "00") setQr(r.qrCode || r.responseMessage);
       else toast(r.responseMessage, "error");
     } catch (e) { toast(e.message, "error"); }
@@ -1075,6 +1077,7 @@ const QRCode = ({ token, toast }) => {
           <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.7 }}>
             Generate a QR code that members can scan to mark their session as utilized when they arrive at the gym.
           </p>
+          <Field label="Session ID"><input placeholder="Paste session UUID" value={sessionId} onChange={e => setSessionId(e.target.value)} /></Field>
           <Btn onClick={generate} loading={loading} style={{ justifyContent: "center", width: "100%", padding: 14 }}>
             <Icon name="qr" size={16} /> Generate QR Code
           </Btn>
@@ -1088,6 +1091,45 @@ const QRCode = ({ token, toast }) => {
               const a = document.createElement("a"); a.href = `data:image/png;base64,${qr}`;
               a.download = "gym-checkin-qr.png"; a.click();
             }}>Download QR</Btn>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── CHECKIN PAGE (public entry via QR) ──────────────────────────────────────
+const CheckinPage = ({ authToken, onAuth }) => {
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const params = new URLSearchParams(window.location.search);
+  const incoming = params.get("token");
+
+  useEffect(() => {
+    if (!incoming) { setStatus("No token provided in URL."); return; }
+    if (!authToken) { setStatus("Please login to check in using your account."); return; }
+    const doCheckin = async () => {
+      setLoading(true);
+      try {
+        const res = await api("/checkin", "POST", { token: incoming }, authToken);
+        setStatus(res.responseMessage || "Check-in completed");
+      } catch (e) { setStatus(e.message || "Check-in failed"); }
+      finally { setLoading(false); }
+    };
+    doCheckin();
+  }, [authToken]);
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: 32, borderRadius: 12, width: "100%", maxWidth: 520 }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, marginBottom: 12 }}>Session Check-in</h2>
+        <p style={{ color: "var(--muted)", marginBottom: 18 }}>Scaned QR will attempt to mark your booked session as utilized. You must be logged in as the booking owner.</p>
+        <div style={{ minHeight: 80, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, background: "var(--surface2)", padding: 16 }}>
+          {loading ? <Spinner /> : <div style={{ color: "var(--muted)" }}>{status}</div>}
+        </div>
+        {!authToken && (
+          <div style={{ marginTop: 18 }}>
+            <p style={{ color: "var(--muted)", marginBottom: 8 }}>If you are not logged in, please login then return to this URL to complete check-in.</p>
           </div>
         )}
       </div>
@@ -1176,6 +1218,11 @@ export default function App() {
     localStorage.removeItem("gt_token"); localStorage.removeItem("gt_email"); localStorage.removeItem("gt_role");
     setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard");
   };
+
+  // If the app was opened via a QR checkin link (/?token=...), render the Checkin flow.
+  const urlParams = new URLSearchParams(window.location.search);
+  const incomingCheckin = urlParams.get("token");
+  if (incomingCheckin) return <><GlobalStyle /><CheckinPage authToken={token} onAuth={onAuth} /></>;
 
   if (!token) return <><GlobalStyle /><AuthScreen onAuth={onAuth} /></>;
 

@@ -40,6 +40,8 @@ public interface UserService {
 
     UtilizeResponse utilizeSession();
 
+    UtilizeResponse utilizeSessionWithToken(String token);
+
     WorkoutResponse createWorkout (WorkoutRequest workoutRequest);
 
     //UtilizeResponse utilizeSession(UUID sessionId);

@@ -5,6 +5,8 @@ import com.gymTracker.GymTracker.App.Dto.Request.*;
 import com.gymTracker.GymTracker.App.Dto.Response.*;
 import com.gymTracker.GymTracker.Domain.Service.UserService;
 import com.gymTracker.GymTracker.Infracstructure.Utils.QRCodeGenerator;
+import com.gymTracker.GymTracker.Infracstructure.Config.Jwt.JwtUtils;
+import com.gymTracker.GymTracker.App.Dto.Request.CheckinRequest;
 import jakarta.validation.Path;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -30,10 +32,12 @@ import java.util.UUID;
 public class AppController {
 
     private final UserService userService;
+    private final JwtUtils jwtUtils;
 
 
-    public AppController(UserService userService) {
+    public AppController(UserService userService, JwtUtils jwtUtils) {
         this.userService = userService;
+        this.jwtUtils = jwtUtils;
     }
 
     @PostMapping("/register")
@@ -125,12 +129,15 @@ public class AppController {
     }
     @GetMapping("/generate-qr")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<QrResponse> generateQrCode() {
-        String hardcodedUrl = "http://localhost:8080/api/utilize/{sessionId}";
-
+    public ResponseEntity<QrResponse> generateQrCode(@RequestParam(name = "sessionId") String sessionId) {
+        // Generate a short-lived check-in token and embed the frontend check-in URL in the QR code.
         try {
-            String qrCodeBase64 = QRCodeGenerator.generateQRCodeBase64(hardcodedUrl, 300, 300);
-            log.info("QR code generated successfully for {}", hardcodedUrl);
+            String token = jwtUtils.generateCheckinToken(sessionId, 300); // 5 minutes
+            String frontEndBase = "http://localhost:5175";
+            String checkinUrl = frontEndBase + "/checkin?token=" + token;
+
+            String qrCodeBase64 = QRCodeGenerator.generateQRCodeBase64(checkinUrl, 300, 300);
+            log.info("QR code generated successfully for session {}", sessionId);
 
             QrResponse response = new QrResponse("00", qrCodeBase64);
             return ResponseEntity.ok(response);
@@ -141,6 +148,13 @@ public class AppController {
             QrResponse errorResponse = new QrResponse("99", "Failed to generate QR code.");
             return ResponseEntity.status(500).body(errorResponse);
         }
+    }
+
+    @PostMapping("/checkin")
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<UtilizeResponse> checkin(@RequestBody CheckinRequest checkinRequest) {
+        UtilizeResponse response = userService.utilizeSessionWithToken(checkinRequest.getToken());
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/utilize")
     //@PreAuthorize("hasAuthority('USER')")

@@ -86,6 +86,12 @@
             <scope>runtime</scope>
         </dependency>
 
+<!--        &lt;!&ndash; PostgreSQL Driver (for Supabase) &ndash;&gt;-->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
         <!-- Servlet API -->
         <dependency>
             <groupId>jakarta.servlet</groupId>

@@ -53,6 +53,29 @@ public class JwtUtils {
     public String generateTokenFromEmail(String email) {
         return Jwts.builder().subject(email).issuedAt(new Date()).expiration(new Date((new Date()).getTime() + (long)this.jwtExpirationMs)).signWith(this.key()).compact();
     }
+    
+    public String generateCheckinToken(String sessionId, int expirySeconds) {
+        long now = (new Date()).getTime();
+        return Jwts.builder()
+                .claim("sid", sessionId)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + (long) expirySeconds * 1000L))
+                .signWith(this.key())
+                .compact();
+    }
+
+    public String getSessionIdFromToken(String token) {
+        if (token == null || token.isEmpty()) return null;
+        try {
+            Claims claims = (Claims) Jwts.parser().verifyWith((SecretKey)this.key()).build().parseSignedClaims(token).getPayload();
+            Object sid = claims.get("sid");
+            if (sid == null) return null;
+            return sid.toString();
+        } catch (Exception e) {
+            logger.error("Failed to parse checkin token: {}", e.getMessage());
+            return null;
+        }
+    }
     public String getUserNameFromJwtToken(String token) {
         return ((Claims)Jwts.parser().verifyWith((SecretKey)this.key()).build().parseSignedClaims(token).getPayload()).getSubject();
     }
