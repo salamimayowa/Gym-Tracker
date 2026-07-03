@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8137eba2-51c5-4f27-9a5b-b4be23885470" name="Changes" comment="fix(app-prod):all the database configuration and also the environment variables">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gymTracker/GymTracker/Infracstructure/Utils/SendMails.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gymTracker/GymTracker/Infracstructure/Utils/SendMails.java" afterDir="false" />
-    </list>
+    <list default="true" id="8137eba2-51c5-4f27-9a5b-b4be23885470" name="Changes" comment="fix(app-prod):all the database configuration and also the environment variables" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

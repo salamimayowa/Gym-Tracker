@@ -848,6 +848,19 @@ const MyWorkouts = ({ token, toast, refreshTick }) => {
       .finally(() => setLoading(false));
   }, [token, refreshTick]);
 
+  const deleteWorkout = async (workoutId) => {
+    if (!confirm("Delete this workout?")) return;
+    try {
+      const r = await api("/workout", "DELETE", { workoutId }, token);
+      toast(r.responseMessage || "Workout deleted", r.responseCode === "00" ? "success" : "error");
+      if (r.responseCode === "00") {
+        setWorkouts(prev => prev.filter(workout => workout.id !== workoutId));
+      }
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  };
+
   return (
     <div className="fade-up">
       <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, letterSpacing: 2, marginBottom: 4 }}>MY WORKOUTS</h2>
@@ -865,7 +878,24 @@ const MyWorkouts = ({ token, toast, refreshTick }) => {
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{workout.exerciseName}</div>
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>{workout.sets} sets x {workout.targetReps} reps</div>
               </div>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>{workout.workoutDate}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{workout.workoutDate}</div>
+                <button
+                  onClick={() => deleteWorkout(workout.id)}
+                  style={{
+                    background: "rgba(255,59,59,0.1)",
+                    border: "1px solid rgba(255,59,59,0.3)",
+                    color: "var(--danger)",
+                    borderRadius: 8,
+                    padding: "6px 8px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  aria-label={`Delete workout ${workout.exerciseName}`}
+                >
+                  <Icon name="trash" size={14} />
+                </button>
+              </div>
             </div>
           </div>
         ))}

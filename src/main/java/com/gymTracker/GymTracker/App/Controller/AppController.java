@@ -175,5 +175,11 @@ public class AppController {
         return userService.viewWorkouts();
     }
 
+    @DeleteMapping("/workout")
+    @PreAuthorize("hasAuthority('USER')")
+    public DeleteResponse deleteWorkout(@RequestBody @Valid WorkoutDeleteRequest workoutDeleteRequest){
+        return userService.deleteWorkout(workoutDeleteRequest);
+    }
+
 
 }

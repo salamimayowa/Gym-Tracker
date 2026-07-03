@@ -142,6 +142,9 @@ public class UserServiceImpl implements UserService {
         }
 
         Workout workout = optionalWorkout.get();
+        if (!String.valueOf(user.getId()).equals(workout.getUserId())) {
+            return new DeleteResponse("03", "Workout does not belong to this user");
+        }
         workoutRepository.delete(workout);
         return new DeleteResponse("00", "Workout Deleted Successfully");
     }
@@ -407,6 +410,16 @@ public class UserServiceImpl implements UserService {
             return new DeleteResponse("01", "User not found");
         }
         return deleteWorkoutById(optionalUser.get(), adminDeleteRequest.getResourceId());
+    }
+
+    @Override
+    public DeleteResponse deleteWorkout(WorkoutDeleteRequest workoutDeleteRequest) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<User> optionalUser = findUserByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return new DeleteResponse("01", "User not found");
+        }
+        return deleteWorkoutById(optionalUser.get(), workoutDeleteRequest.getWorkoutId());
     }
 
 

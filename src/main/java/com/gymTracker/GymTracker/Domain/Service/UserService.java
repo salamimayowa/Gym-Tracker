@@ -36,6 +36,8 @@ public interface UserService {
 
     WorkoutListResponse viewWorkoutsByEmail(AdminUserRequest adminUserRequest);
 
+    DeleteResponse deleteWorkout(WorkoutDeleteRequest workoutDeleteRequest);
+
     DeleteResponse deleteWorkoutForUser(AdminDeleteRequest adminDeleteRequest);
 
     UtilizeResponse utilizeSession();
