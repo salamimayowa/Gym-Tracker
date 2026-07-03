@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
+import { API_BASE } from './api';
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-const BASE_URL = "http://localhost:8080/api/v1";
+const BASE_URL = API_BASE;
 
 const api = async (path, method = "GET", body = null, token = null) => {
   const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const authToken = token || localStorage.getItem("gt_token") || localStorage.getItem("token");
+  if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${BASE_URL}${path}`, opts);
@@ -204,6 +206,7 @@ const AuthScreen = ({ onAuth }) => {
   const [mode, setMode] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     fullName: "", username: "", email: "", password: "", gender: "Male", dob: "", role: "USER"
   });
@@ -292,7 +295,38 @@ const AuthScreen = ({ onAuth }) => {
             </Field>
           )}
           <Field label="Email"><input type="email" value={form.email} onChange={set("email")} placeholder="you@example.com" /></Field>
-          <Field label="Password"><input type="password" value={form.password} onChange={set("password")} placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special" /></Field>
+          <Field label="Password">
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={set("password")}
+                placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
+                style={{ paddingRight: 48 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  right: 10,
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  color: "var(--muted)",
+                  padding: 4,
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </Field>
           {mode === "register" && (
             <>
               <Field label="Gender">
@@ -1209,13 +1243,18 @@ export default function App() {
 
   const onAuth = (tok, email, role) => {
     localStorage.setItem("gt_token", tok);
+    localStorage.setItem("token", tok);
     localStorage.setItem("gt_email", email);
+    localStorage.setItem("email", email);
     localStorage.setItem("gt_role", role || "USER");
+    localStorage.setItem("role", role || "USER");
     setToken(tok); setUserEmail(email); setUserRole(role || "USER");
   };
 
   const logout = () => {
-    localStorage.removeItem("gt_token"); localStorage.removeItem("gt_email"); localStorage.removeItem("gt_role");
+    localStorage.removeItem("gt_token"); localStorage.removeItem("token");
+    localStorage.removeItem("gt_email"); localStorage.removeItem("email");
+    localStorage.removeItem("gt_role"); localStorage.removeItem("role");
     setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard");
   };
 
