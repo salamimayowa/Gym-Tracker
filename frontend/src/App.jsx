@@ -13,6 +13,15 @@ const api = async (path, method = "GET", body = null, token = null) => {
   const res = await fetch(`${BASE_URL}${path}`, opts);
   if (!res.ok) {
     const err = await res.text();
+    if (res.status === 403 && path === "/login") {
+      throw new Error("Incorrect username or password");
+    }
+    if (res.status === 401) {
+      throw new Error("Please log in again");
+    }
+    if (res.status === 403) {
+      throw new Error("You do not have permission to do that");
+    }
     throw new Error(err || `HTTP ${res.status}`);
   }
   return res.json();
@@ -87,6 +96,27 @@ const GlobalStyle = () => (
     @keyframes slideIn {
       from { transform: translateX(-100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell { display: block !important; }
+      .app-main { margin-left: 0 !important; padding: 20px 16px !important; }
+      .app-topbar { justify-content: space-between !important; margin-bottom: 20px !important; }
+      .mobile-menu-button { display: flex !important; }
+      .app-sidebar {
+        transform: translateX(-100%);
+        width: 84vw !important;
+        max-width: 320px;
+        transition: transform 0.25s ease;
+      }
+      .app-sidebar.open { transform: translateX(0); }
+      .app-sidebar-overlay { display: block !important; }
+      .auth-card { padding: 24px !important; }
+      .auth-grid, .two-column-grid { grid-template-columns: 1fr !important; }
+    }
+
+    @media (min-width: 901px) {
+      .mobile-menu-button, .app-sidebar-overlay { display: none !important; }
     }
 
     .fade-up { animation: fadeUp 0.4s ease both; }
@@ -310,7 +340,7 @@ const TimeField = ({ label, value, onChange, helper, icon = "clock" }) => {
 };
 
 // ── AUTH SCREENS ─────────────────────────────────────────────────────────────
-const AuthScreen = ({ onAuth }) => {
+const AuthScreen = ({ onAuth, toast }) => {
   const [mode, setMode] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -338,7 +368,7 @@ const AuthScreen = ({ onAuth }) => {
           email: form.email, password: form.password,
           gender: form.gender, dob: form.dob
         });
-        if (res.responseCode === "00") { setMode("login"); setError(""); alert("Registered! Please login."); }
+        if (res.responseCode === "00") { setMode("login"); setError(""); toast?.("Registered successfully. Please login.", "success"); }
         else setError(res.responseMessage || "Registration failed");
       }
     } catch (e) { setError(e.message); }
@@ -368,12 +398,12 @@ const AuthScreen = ({ onAuth }) => {
       </div>
 
       {/* Card */}
-      <div className="fade-up-d1" style={{
+      <div className="fade-up-d1 auth-card" style={{
         background: "var(--surface)", border: "1px solid var(--border)",
         borderRadius: 20, padding: 32, width: "100%", maxWidth: 420
       }}>
         {/* Tab */}
-        <div style={{
+        <div className="auth-grid" style={{
           display: "grid", gridTemplateColumns: "1fr 1fr",
           background: "var(--surface2)", borderRadius: 10, padding: 4, marginBottom: 28
         }}>
@@ -465,7 +495,7 @@ const AuthScreen = ({ onAuth }) => {
 };
 
 // ── SIDEBAR NAV ───────────────────────────────────────────────────────────────
-const Sidebar = ({ active, setActive, onLogout, isAdmin }) => {
+const Sidebar = ({ active, setActive, onLogout, isAdmin, mobileOpen, closeMobile }) => {
   const items = [
     { id: "dashboard", icon: "zap", label: "Dashboard" },
     { id: "available", icon: "clock", label: "Availability" },
@@ -483,7 +513,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin }) => {
   ];
 
   return (
-    <div style={{
+    <div className={`app-sidebar${mobileOpen ? " open" : ""}`} style={{
       width: 220, background: "var(--surface)", borderRight: "1px solid var(--border)",
       display: "flex", flexDirection: "column", padding: "24px 12px",
       position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100,
@@ -500,7 +530,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin }) => {
 
       <nav style={{ flex: 1, marginTop: 16, display: "flex", flexDirection: "column", gap: 2 }}>
         {items.map(({ id, icon, label }) => (
-          <button key={id} onClick={() => setActive(id)} style={{
+          <button key={id} onClick={() => { setActive(id); closeMobile?.(); }} style={{
             display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
             borderRadius: 10, background: active === id ? "rgba(200,255,0,0.12)" : "transparent",
             color: active === id ? "var(--accent)" : "var(--muted)",
@@ -514,7 +544,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin }) => {
         ))}
       </nav>
 
-      <button onClick={onLogout} style={{
+      <button onClick={() => { onLogout(); closeMobile?.(); }} style={{
         display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
         borderRadius: 10, background: "transparent", color: "var(--muted)",
         fontSize: 14, width: "100%", textAlign: "left",
@@ -683,7 +713,6 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
   useEffect(load, [token, refreshTick]);
 
   const deleteSession = async (s) => {
-    if (!confirm("Delete this session?")) return;
     try {
       const r = await api("/delete", "DELETE", { sessionId: s.id }, token);
       toast(r.responseMessage || "Deleted", r.responseCode === "00" ? "success" : "error");
@@ -987,7 +1016,6 @@ const MyWorkouts = ({ token, toast, refreshTick }) => {
   }, [token, refreshTick]);
 
   const deleteWorkout = async (workoutId) => {
-    if (!confirm("Delete this workout?")) return;
     try {
       const r = await api("/workout", "DELETE", { workoutId }, token);
       toast(r.responseMessage || "Workout deleted", r.responseCode === "00" ? "success" : "error");
@@ -1100,7 +1128,6 @@ const AdminManageUser = ({ token, toast, onSuccess }) => {
   };
 
   const deleteSession = async (sessionId) => {
-    if (!confirm("Delete this session for the user?")) return;
     setLoading(true);
     try {
       const r = await api("/admin/session", "DELETE", { email, resourceId: sessionId }, token);
@@ -1114,7 +1141,6 @@ const AdminManageUser = ({ token, toast, onSuccess }) => {
   };
 
   const deleteWorkout = async (workoutId) => {
-    if (!confirm("Delete this workout for the user?")) return;
     setLoading(true);
     try {
       const r = await api("/admin/workout", "DELETE", { email, resourceId: workoutId }, token);
@@ -1403,6 +1429,7 @@ export default function App() {
   const [active, setActive] = useState("dashboard");
   const [toast_, setToast] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAdmin = userRole === "ADMIN";
 
@@ -1423,7 +1450,7 @@ export default function App() {
     localStorage.removeItem("gt_token"); localStorage.removeItem("token");
     localStorage.removeItem("gt_email"); localStorage.removeItem("email");
     localStorage.removeItem("gt_role"); localStorage.removeItem("role");
-    setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard");
+    setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard"); setMobileMenuOpen(false);
   };
 
   // If the app was opened via a QR checkin link (/?token=...), render the Checkin flow.
@@ -1431,7 +1458,7 @@ export default function App() {
   const incomingCheckin = urlParams.get("token");
   if (incomingCheckin) return <><GlobalStyle /><CheckinPage authToken={token} onAuth={onAuth} /></>;
 
-  if (!token) return <><GlobalStyle /><AuthScreen onAuth={onAuth} /></>;
+  if (!token) return <><GlobalStyle /><AuthScreen onAuth={onAuth} toast={toast} /></>;
 
   const pages = {
     dashboard: <Dashboard token={token} setActive={setActive} refreshTick={refreshTick} isAdmin={isAdmin} />,
@@ -1439,7 +1466,6 @@ export default function App() {
     book: <BookSession token={token} toast={toast} onSuccess={refresh} />,
     available: <Availability token={token} toast={toast} isAdmin={isAdmin} onSlotClick={async (slotTime) => {
       if (isAdmin) return;
-      if (!confirm(`Book ${new Date(slotTime).toLocaleString()}?`)) return;
       try {
         const r = await api("/bookSession", "POST", { startTime: slotTime }, token);
         toast(r.responseMessage, r.responseCode === "00" ? "success" : "error");
@@ -1459,11 +1485,49 @@ export default function App() {
   return (
     <>
       <GlobalStyle />
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Sidebar active={active} setActive={setActive} onLogout={logout} isAdmin={isAdmin} />
-        <main style={{ marginLeft: 220, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
+      <div className="app-shell" style={{ display: "flex", minHeight: "100vh" }}>
+        <div
+          className="app-sidebar-overlay"
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            display: "none",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 99,
+          }}
+        />
+        <Sidebar
+          active={active}
+          setActive={setActive}
+          onLogout={logout}
+          isAdmin={isAdmin}
+          mobileOpen={mobileMenuOpen}
+          closeMobile={() => setMobileMenuOpen(false)}
+        />
+        <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
           {/* Top bar */}
-          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 32 }}>
+          <div className="app-topbar" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 32 }}>
+            <button
+              type="button"
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+              style={{
+                display: "none",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                color: "var(--text)",
+                marginRight: "auto",
+              }}
+            >
+              <Icon name="calendar" size={18} />
+            </button>
             <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 40, padding: "8px 16px" }}>
               <div style={{ width: 28, height: 28, background: "var(--accent)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a0a0f" }}>
                 <Icon name="user" size={14} />
