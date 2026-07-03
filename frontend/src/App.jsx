@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { API_BASE } from './api';
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
@@ -200,6 +200,114 @@ const Field = ({ label, error, children }) => (
     {error && <span style={{ fontSize: 12, color: "var(--danger)" }}>{error}</span>}
   </div>
 );
+
+const DateField = ({ label, value, onChange, min, helper, icon = "calendar" }) => {
+  const inputRef = useRef(null);
+  const openPicker = () => {
+    if (!inputRef.current) return;
+    if (typeof inputRef.current.showPicker === "function") {
+      inputRef.current.showPicker();
+      return;
+    }
+    inputRef.current.focus();
+    inputRef.current.click();
+  };
+
+  return (
+    <Field label={label}>
+      <div style={{ position: "relative" }}>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--muted)", pointerEvents: "none" }}>
+          <Icon name={icon} size={16} />
+        </span>
+        <input
+          ref={inputRef}
+          type="date"
+          value={value}
+          onChange={onChange}
+          style={{ paddingLeft: 40, paddingRight: 88, cursor: "pointer" }}
+        />
+        <button
+          type="button"
+          onClick={openPicker}
+          aria-label={`Open ${label} picker`}
+          style={{
+            position: "absolute",
+            right: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(200,255,0,0.12)",
+            border: "1px solid rgba(200,255,0,0.28)",
+            color: "var(--accent)",
+            borderRadius: 10,
+            padding: "6px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          <Icon name={icon} size={14} /> Pick
+        </button>
+      </div>
+      {helper && <span style={{ fontSize: 12, color: "var(--muted)" }}>{helper}</span>}
+    </Field>
+  );
+};
+
+const TimeField = ({ label, value, onChange, helper, icon = "clock" }) => {
+  const inputRef = useRef(null);
+  const openPicker = () => {
+    if (!inputRef.current) return;
+    if (typeof inputRef.current.showPicker === "function") {
+      inputRef.current.showPicker();
+      return;
+    }
+    inputRef.current.focus();
+    inputRef.current.click();
+  };
+
+  return (
+    <Field label={label}>
+      <div style={{ position: "relative" }}>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--muted)", pointerEvents: "none" }}>
+          <Icon name={icon} size={16} />
+        </span>
+        <input
+          ref={inputRef}
+          type="time"
+          value={value}
+          onChange={onChange}
+          style={{ paddingLeft: 40, paddingRight: 88, cursor: "pointer" }}
+        />
+        <button
+          type="button"
+          onClick={openPicker}
+          aria-label={`Open ${label} picker`}
+          style={{
+            position: "absolute",
+            right: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(200,255,0,0.12)",
+            border: "1px solid rgba(200,255,0,0.28)",
+            color: "var(--accent)",
+            borderRadius: 10,
+            padding: "6px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          <Icon name={icon} size={14} /> Pick
+        </button>
+      </div>
+      {helper && <span style={{ fontSize: 12, color: "var(--muted)" }}>{helper}</span>}
+    </Field>
+  );
+};
 
 // ── AUTH SCREENS ─────────────────────────────────────────────────────────────
 const AuthScreen = ({ onAuth }) => {
@@ -560,7 +668,8 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editTarget, setEditTarget] = useState(null);
-  const [newTime, setNewTime] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editClock, setEditClock] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const load = () => {
@@ -586,12 +695,12 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
   };
 
   const editSession = async () => {
-    if (!newTime) return;
+    if (!editDate || !editClock) return;
     setSubmitting(true);
     try {
-      const r = await api("/edit", "PUT", { sessionId: editTarget.id, newTime: newTime + ":00" }, token);
+      const r = await api("/edit", "PUT", { sessionId: editTarget.id, newTime: `${editDate}T${editClock}:00` }, token);
       toast(r.responseMessage, r.responseCode === "00" ? "success" : "error");
-      if (r.responseCode === "00") { setEditTarget(null); load(); onSuccess?.(); }
+      if (r.responseCode === "00") { setEditTarget(null); setEditDate(""); setEditClock(""); load(); onSuccess?.(); }
     } catch (e) { toast(e.message, "error"); }
     finally { setSubmitting(false); }
   };
@@ -616,9 +725,21 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
 
       {editTarget && (
         <Modal title="Reschedule Session" onClose={() => setEditTarget(null)}>
-          <Field label="New Date & Time">
-            <input type="datetime-local" value={newTime} onChange={e => setNewTime(e.target.value)} />
-          </Field>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <DateField
+              label="New Date"
+              value={editDate}
+              onChange={e => setEditDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              helper="Choose a new training day."
+            />
+            <TimeField
+              label="New Time"
+              value={editClock}
+              onChange={e => setEditClock(e.target.value)}
+              helper="Choose the exact start time."
+            />
+          </div>
           <div style={{ marginTop: 4, fontSize: 12, color: "var(--muted)" }}>Must be at least 24 hours from now.</div>
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <Btn onClick={editSession} loading={submitting}>Save Changes</Btn>
@@ -632,28 +753,26 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
 
 // ── BOOK SESSION ──────────────────────────────────────────────────────────────
 const BookSession = ({ token, toast, onSuccess }) => {
-  const [startTime, setStartTime] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [startClock, setStartClock] = useState("");
   const [loading, setLoading] = useState(false);
 
   const book = async () => {
-    if (!startTime) return;
+    if (!startDate || !startClock) return;
     setLoading(true);
     try {
-      const r = await api("/bookSession", "POST", { startTime: startTime + ":00" }, token);
+      const r = await api("/bookSession", "POST", { startTime: `${startDate}T${startClock}:00` }, token);
       toast(r.responseMessage, r.responseCode === "00" ? "success" : "error");
       if (r.responseCode === "00") {
-        setStartTime("");
+        setStartDate("");
+        setStartClock("");
         onSuccess?.();
       }
     } catch (e) { toast(e.message, "error"); }
     finally { setLoading(false); }
   };
 
-  const minDateTime = () => {
-    const d = new Date();
-    d.setHours(d.getHours() + 25);
-    return d.toISOString().slice(0, 16);
-  };
+  const minBookingDate = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   return (
     <div className="fade-up">
@@ -664,9 +783,24 @@ const BookSession = ({ token, toast, onSuccess }) => {
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 1, marginBottom: 24 }}>SELECT DATE & TIME</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <Field label="Start Time">
-              <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} min={minDateTime()} />
-            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <DateField
+                label="Session Date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                min={minBookingDate}
+                helper="Pick the day first."
+              />
+              <TimeField
+                label="Start Time"
+                value={startClock}
+                onChange={e => setStartClock(e.target.value)}
+                helper="Choose the exact time."
+              />
+            </div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>
+              Sessions still need to be booked at least 24 hours in advance.
+            </div>
             <Btn onClick={book} loading={loading} style={{ justifyContent: "center", padding: 14 }}>
               <Icon name="calendar" size={16} /> Book Session
             </Btn>
@@ -805,9 +939,13 @@ const WorkoutLog = ({ token, toast, onSuccess }) => {
                 <input type="number" min="1" value={form.targetReps} onChange={set("targetReps")} placeholder="10" />
               </Field>
             </div>
-            <Field label="Workout Date">
-              <input type="date" value={form.workoutDate} onChange={set("workoutDate")} min={new Date().toISOString().split("T")[0]} />
-            </Field>
+            <DateField
+              label="Workout Date"
+              value={form.workoutDate}
+              onChange={set("workoutDate")}
+              min={new Date().toISOString().split("T")[0]}
+              helper="Use the day you completed the workout."
+            />
             <Btn onClick={submit} loading={loading} style={{ justifyContent: "center", padding: 14 }}>
               <Icon name="dumbbell" size={16} /> Log Workout
             </Btn>
