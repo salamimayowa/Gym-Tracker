@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -26,7 +27,8 @@ public class SendMails {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
     }
-    public String sendEmail(MailType type, String recipientEmail, Map<String, Object> variables) {
+    @Async
+    public void sendEmail(MailType type, String recipientEmail, Map<String, Object> variables) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -52,11 +54,10 @@ public class SendMails {
             }
 
             mailSender.send(message);
-            return "Success";
+
 
         } catch (Exception e) {
             System.err.println("Failed to send mail: " + e.getMessage());
-            return e.getMessage();
         }
     }
     private String getTemplateNameForType(MailType type) {
