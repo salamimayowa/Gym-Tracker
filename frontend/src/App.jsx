@@ -118,6 +118,41 @@ const GlobalStyle = () => (
       .auth-grid, .two-column-grid { grid-template-columns: 1fr !important; }
       .responsive-grid { grid-template-columns: 1fr !important; }
       .two-col-on-mobile { grid-template-columns: 1fr !important; }
+      .picker-field {
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      .picker-input {
+        font-size: 16px !important;
+        min-height: 48px;
+        padding-right: 16px !important;
+      }
+      .picker-button {
+        position: static !important;
+        transform: none !important;
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 8px;
+        min-height: 44px;
+        font-size: 13px !important;
+      }
+      input, select, textarea {
+        font-size: 16px !important;
+        padding: 14px 14px !important;
+      }
+      .mobile-tight {
+        gap: 10px !important;
+      }
+      .mobile-card {
+        padding: 18px !important;
+        border-radius: 14px !important;
+      }
+      h2 {
+        font-size: 28px !important;
+      }
+      h3 {
+        font-size: 16px !important;
+      }
     }
 
     @media (min-width: 901px) {
@@ -135,7 +170,7 @@ const GlobalStyle = () => (
       border: 1px solid var(--border);
       color: var(--text);
       font-family: var(--font-body);
-      font-size: 14px;
+      font-size: 16px;
       padding: 12px 16px;
       border-radius: var(--radius);
       outline: none;
@@ -250,7 +285,7 @@ const DateField = ({ label, value, onChange, min, helper, icon = "calendar" }) =
 
   return (
     <Field label={label}>
-      <div style={{ position: "relative" }}>
+      <div className="picker-field" style={{ position: "relative", display: "flex", alignItems: "center" }}>
         <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--muted)", pointerEvents: "none" }}>
           <Icon name={icon} size={16} />
         </span>
@@ -259,12 +294,14 @@ const DateField = ({ label, value, onChange, min, helper, icon = "calendar" }) =
           type="date"
           value={value}
           onChange={onChange}
+          className="picker-input"
           style={{ paddingLeft: 40, paddingRight: 88, cursor: "pointer" }}
         />
         <button
           type="button"
           onClick={openPicker}
           aria-label={`Open ${label} picker`}
+          className="picker-button"
           style={{
             position: "absolute",
             right: 8,
@@ -304,7 +341,7 @@ const TimeField = ({ label, value, onChange, helper, icon = "clock" }) => {
 
   return (
     <Field label={label}>
-      <div style={{ position: "relative" }}>
+      <div className="picker-field" style={{ position: "relative", display: "flex", alignItems: "center" }}>
         <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--muted)", pointerEvents: "none" }}>
           <Icon name={icon} size={16} />
         </span>
@@ -313,12 +350,14 @@ const TimeField = ({ label, value, onChange, helper, icon = "clock" }) => {
           type="time"
           value={value}
           onChange={onChange}
+          className="picker-input"
           style={{ paddingLeft: 40, paddingRight: 88, cursor: "pointer" }}
         />
         <button
           type="button"
           onClick={openPicker}
           aria-label={`Open ${label} picker`}
+          className="picker-button"
           style={{
             position: "absolute",
             right: 8,
