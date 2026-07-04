@@ -99,20 +99,37 @@ const GlobalStyle = () => (
       to { transform: translateX(0); opacity: 1; }
     }
 
+    .app-sidebar {
+      transition: transform 0.25s ease;
+    }
+
+    .app-shell.sidebar-open .app-sidebar {
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .app-shell.sidebar-closed .app-sidebar {
+      transform: translateX(-100%);
+      pointer-events: none;
+    }
+
+    .app-shell.sidebar-open .app-main {
+      margin-left: 220px !important;
+    }
+
+    .app-shell.sidebar-closed .app-main {
+      margin-left: 0 !important;
+    }
+
     @media (max-width: 900px) {
       .app-shell { display: block !important; }
       .app-main { margin-left: 0 !important; padding: 20px 16px !important; }
       .app-topbar { justify-content: space-between !important; margin-bottom: 20px !important; gap: 12px; }
       .sidebar-toggle-button { display: flex !important; }
       .app-sidebar {
-        transform: translateX(-100%);
         width: 84vw !important;
         max-width: 320px;
-        transition: transform 0.25s ease;
-        pointer-events: none;
       }
-      .app-sidebar.open { transform: translateX(0); }
-      .app-sidebar.open { pointer-events: auto; }
       .app-sidebar-overlay { display: block !important; }
       .auth-card { padding: 24px !important; }
       .auth-grid, .two-column-grid { grid-template-columns: 1fr !important; }
@@ -1473,7 +1490,7 @@ export default function App() {
   const [active, setActive] = useState("dashboard");
   const [toast_, setToast] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth > 900 : true));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isAdmin = userRole === "ADMIN";
 
@@ -1551,7 +1568,7 @@ export default function App() {
           sidebarOpen={sidebarOpen}
           closeSidebar={() => setSidebarOpen(false)}
         />
-        <main className="app-main" style={{ marginLeft: sidebarOpen ? 220 : 0, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
+        <main className="app-main" style={{ marginLeft: 0, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
           {/* Top bar */}
           <div className="app-topbar" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 32 }}>
             <button
