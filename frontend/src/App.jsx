@@ -130,16 +130,30 @@ const GlobalStyle = () => (
         width: 84vw !important;
         max-width: 320px;
       }
+      .app-sidebar nav button {
+        font-size: 16px !important;
+        padding: 14px 16px !important;
+      }
+      .app-sidebar nav button span,
+      .app-sidebar nav button svg {
+        font-size: 16px !important;
+      }
+      .app-sidebar > div:first-child span {
+        font-size: 20px !important;
+      }
       .app-sidebar-overlay { display: block !important; }
       .auth-card { padding: 24px !important; }
       .auth-grid, .two-column-grid { grid-template-columns: 1fr !important; }
       .responsive-grid { grid-template-columns: 1fr !important; }
       .two-col-on-mobile { grid-template-columns: 1fr !important; }
       .picker-field {
+        width: 100% !important;
         flex-direction: column !important;
         align-items: stretch !important;
+        gap: 8px;
       }
       .picker-input {
+        width: 100% !important;
         font-size: 16px !important;
         min-height: 48px;
         padding-right: 16px !important;
@@ -1490,7 +1504,18 @@ export default function App() {
   const [active, setActive] = useState("dashboard");
   const [toast_, setToast] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth > 900 : true));
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarOpen(window.innerWidth > 900);
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const isAdmin = userRole === "ADMIN";
 
