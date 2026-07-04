@@ -39,6 +39,7 @@ const Icon = ({ name, size = 20 }) => {
     trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
     check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
     qr: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3"/><rect x="16" y="5" width="3" height="3"/><rect x="16" y="16" width="3" height="3"/><rect x="5" y="16" width="3" height="3"/></svg>,
+    menu: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>,
     report: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
     clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     zap: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
@@ -101,22 +102,26 @@ const GlobalStyle = () => (
     @media (max-width: 900px) {
       .app-shell { display: block !important; }
       .app-main { margin-left: 0 !important; padding: 20px 16px !important; }
-      .app-topbar { justify-content: space-between !important; margin-bottom: 20px !important; }
-      .mobile-menu-button { display: flex !important; }
+      .app-topbar { justify-content: space-between !important; margin-bottom: 20px !important; gap: 12px; }
+      .sidebar-toggle-button { display: flex !important; }
       .app-sidebar {
         transform: translateX(-100%);
         width: 84vw !important;
         max-width: 320px;
         transition: transform 0.25s ease;
+        pointer-events: none;
       }
       .app-sidebar.open { transform: translateX(0); }
+      .app-sidebar.open { pointer-events: auto; }
       .app-sidebar-overlay { display: block !important; }
       .auth-card { padding: 24px !important; }
       .auth-grid, .two-column-grid { grid-template-columns: 1fr !important; }
+      .responsive-grid { grid-template-columns: 1fr !important; }
+      .two-col-on-mobile { grid-template-columns: 1fr !important; }
     }
 
     @media (min-width: 901px) {
-      .mobile-menu-button, .app-sidebar-overlay { display: none !important; }
+      .sidebar-toggle-button, .app-sidebar-overlay { display: none !important; }
     }
 
     .fade-up { animation: fadeUp 0.4s ease both; }
@@ -403,8 +408,8 @@ const AuthScreen = ({ onAuth, toast }) => {
         borderRadius: 20, padding: 32, width: "100%", maxWidth: 420
       }}>
         {/* Tab */}
-        <div className="auth-grid" style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr",
+        <div className="auth-grid responsive-grid" style={{
+          display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)",
           background: "var(--surface2)", borderRadius: 10, padding: 4, marginBottom: 28
         }}>
           {["login", "register"].map(m => (
@@ -495,7 +500,7 @@ const AuthScreen = ({ onAuth, toast }) => {
 };
 
 // ── SIDEBAR NAV ───────────────────────────────────────────────────────────────
-const Sidebar = ({ active, setActive, onLogout, isAdmin, mobileOpen, closeMobile }) => {
+const Sidebar = ({ active, setActive, onLogout, isAdmin, sidebarOpen, closeSidebar }) => {
   const items = [
     { id: "dashboard", icon: "zap", label: "Dashboard" },
     { id: "available", icon: "clock", label: "Availability" },
@@ -513,7 +518,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin, mobileOpen, closeMobile
   ];
 
   return (
-    <div className={`app-sidebar${mobileOpen ? " open" : ""}`} style={{
+    <div className={`app-sidebar${sidebarOpen ? " open" : ""}`} style={{
       width: 220, background: "var(--surface)", borderRight: "1px solid var(--border)",
       display: "flex", flexDirection: "column", padding: "24px 12px",
       position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100,
@@ -530,7 +535,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin, mobileOpen, closeMobile
 
       <nav style={{ flex: 1, marginTop: 16, display: "flex", flexDirection: "column", gap: 2 }}>
         {items.map(({ id, icon, label }) => (
-          <button key={id} onClick={() => { setActive(id); closeMobile?.(); }} style={{
+          <button key={id} onClick={() => { setActive(id); closeSidebar?.(); }} style={{
             display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
             borderRadius: 10, background: active === id ? "rgba(200,255,0,0.12)" : "transparent",
             color: active === id ? "var(--accent)" : "var(--muted)",
@@ -544,7 +549,7 @@ const Sidebar = ({ active, setActive, onLogout, isAdmin, mobileOpen, closeMobile
         ))}
       </nav>
 
-      <button onClick={() => { onLogout(); closeMobile?.(); }} style={{
+      <button onClick={() => { onLogout(); closeSidebar?.(); }} style={{
         display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
         borderRadius: 10, background: "transparent", color: "var(--muted)",
         fontSize: 14, width: "100%", textAlign: "left",
@@ -754,7 +759,7 @@ const MySessions = ({ token, toast, refreshTick, onSuccess }) => {
 
       {editTarget && (
         <Modal title="Reschedule Session" onClose={() => setEditTarget(null)}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 14 }}>
             <DateField
               label="New Date"
               value={editDate}
@@ -808,11 +813,11 @@ const BookSession = ({ token, toast, onSuccess }) => {
       <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, letterSpacing: 2, marginBottom: 4 }}>BOOK SESSION</h2>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 32 }}>Reserve your gym slot at Union Fitness Center.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      <div className="two-col-on-mobile" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 24 }}>
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 1, marginBottom: 24 }}>SELECT DATE & TIME</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 14 }}>
               <DateField
                 label="Session Date"
                 value={startDate}
@@ -952,7 +957,7 @@ const WorkoutLog = ({ token, toast, onSuccess }) => {
       <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, letterSpacing: 2, marginBottom: 4 }}>LOG WORKOUT</h2>
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 32 }}>Track your exercises, sets, and reps.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      <div className="two-col-on-mobile" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 24 }}>
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28 }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 1, marginBottom: 24 }}>NEW EXERCISE</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -960,7 +965,7 @@ const WorkoutLog = ({ token, toast, onSuccess }) => {
               <input list="exercises" value={form.exerciseName} onChange={set("exerciseName")} placeholder="e.g. Bench Press" />
               <datalist id="exercises">{exercises.map(e => <option key={e} value={e} />)}</datalist>
             </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 12 }}>
               <Field label="Sets">
                 <input type="number" min="1" value={form.sets} onChange={set("sets")} placeholder="3" />
               </Field>
@@ -1169,7 +1174,7 @@ const AdminManageUser = ({ token, toast, onSuccess }) => {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      <div className="two-col-on-mobile" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 24 }}>
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 24 }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 20, letterSpacing: 1, marginBottom: 16 }}>BOOK FOR USER</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1401,7 +1406,7 @@ const AdminRegister = ({ token, toast }) => {
       <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 32 }}>Admin-only flow to create another admin account.</p>
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 28, maxWidth: 620 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "var(--responsive-grid, 1fr 1fr)", gap: 14 }}>
           <Field label="Full Name"><input value={form.fullName} onChange={set("fullName")} placeholder="Lastname Firstname" /></Field>
           <Field label="Username"><input value={form.username} onChange={set("username")} placeholder="@adminuser" /></Field>
           <Field label="Email"><input type="email" value={form.email} onChange={set("email")} placeholder="admin@example.com" /></Field>
@@ -1429,7 +1434,7 @@ export default function App() {
   const [active, setActive] = useState("dashboard");
   const [toast_, setToast] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth > 900 : true));
 
   const isAdmin = userRole === "ADMIN";
 
@@ -1450,7 +1455,7 @@ export default function App() {
     localStorage.removeItem("gt_token"); localStorage.removeItem("token");
     localStorage.removeItem("gt_email"); localStorage.removeItem("email");
     localStorage.removeItem("gt_role"); localStorage.removeItem("role");
-    setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard"); setMobileMenuOpen(false);
+    setToken(null); setUserEmail(""); setUserRole("USER"); setActive("dashboard"); setSidebarOpen(false);
   };
 
   // If the app was opened via a QR checkin link (/?token=...), render the Checkin flow.
@@ -1485,16 +1490,18 @@ export default function App() {
   return (
     <>
       <GlobalStyle />
-      <div className="app-shell" style={{ display: "flex", minHeight: "100vh" }}>
+      <div className={`app-shell${sidebarOpen ? " sidebar-open" : " sidebar-closed"}`} style={{ display: "flex", minHeight: "100vh" }}>
         <div
           className="app-sidebar-overlay"
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={() => setSidebarOpen(false)}
           style={{
             display: "none",
             position: "fixed",
             inset: 0,
             background: "rgba(0,0,0,0.55)",
             zIndex: 99,
+            visibility: sidebarOpen ? "visible" : "hidden",
+            pointerEvents: sidebarOpen ? "auto" : "none",
           }}
         />
         <Sidebar
@@ -1502,23 +1509,23 @@ export default function App() {
           setActive={setActive}
           onLogout={logout}
           isAdmin={isAdmin}
-          mobileOpen={mobileMenuOpen}
-          closeMobile={() => setMobileMenuOpen(false)}
+          sidebarOpen={sidebarOpen}
+          closeSidebar={() => setSidebarOpen(false)}
         />
-        <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
+        <main className="app-main" style={{ marginLeft: sidebarOpen ? 220 : 0, flex: 1, padding: "40px 36px", minHeight: "100vh" }}>
           {/* Top bar */}
           <div className="app-topbar" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 32 }}>
             <button
               type="button"
-              className="mobile-menu-button"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Open menu"
+              className="sidebar-toggle-button"
+              onClick={() => setSidebarOpen(prev => !prev)}
+              aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
               style={{
-                display: "none",
+                display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 42,
-                height: 42,
+                gap: 8,
+                padding: "10px 14px",
                 borderRadius: 12,
                 background: "var(--surface)",
                 border: "1px solid var(--border)",
@@ -1526,7 +1533,8 @@ export default function App() {
                 marginRight: "auto",
               }}
             >
-              <Icon name="calendar" size={18} />
+              <Icon name="menu" size={18} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{sidebarOpen ? "Hide sidebar" : "Show sidebar"}</span>
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 40, padding: "8px 16px" }}>
               <div style={{ width: 28, height: 28, background: "var(--accent)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a0a0f" }}>
